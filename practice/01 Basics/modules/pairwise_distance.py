@@ -51,6 +51,20 @@ class PairwiseDistance:
 
         # INSERT YOUR CODE
 
+        if self.metric == 'euclidean':
+            if self.is_normalize:
+                dist_func = norm_ED_distance
+            else:
+                dist_func = ED_distance
+        elif self.metric == 'dtw':
+            if self.is_normalize:
+                # сначала нормализуем потом считаем DTW
+                def normalized_dtw(ts1, ts2):
+                    return DTW_distance(z_normalize(ts1), z_normalize(ts2))
+                dist_func = normalized_dtw
+            else:
+                dist_func = DTW_distance
+
         return dist_func
 
 
@@ -70,5 +84,20 @@ class PairwiseDistance:
         matrix_values = np.zeros(shape=matrix_shape)
         
         # INSERT YOUR CODE
+
+        # выбор функции расстояния
+        dist_func = self._choose_distance()
+
+        # количество рядов
+        K = input_data.shape[0]
+
+        # проходим по верхнему треугольнику
+        for i in range(K):
+            matrix_values[i, i] = 0.0   # зануляем диагональ (расстояние до самого себя - ноль)
+            for j in range(i + 1, K):
+                # считаем расстояние между i-м и j-м рядами
+                matrix_values[i, j] = dist_func(input_data[i], input_data[j])
+                # симметрично заполняем нижний треугольник
+                matrix_values[j, i] = matrix_values[i, j]
 
         return matrix_values

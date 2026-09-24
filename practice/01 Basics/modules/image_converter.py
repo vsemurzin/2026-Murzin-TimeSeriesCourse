@@ -3,7 +3,15 @@ import pandas as pd
 import math
 import cv2
 import imutils
-from google.colab.patches import cv2_imshow
+try:
+    from google.colab.patches import cv2_imshow
+except ImportError:
+    import cv2
+    import matplotlib.pyplot as plt
+    def cv2_imshow(img):
+        plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+        plt.axis('off')
+        plt.show()
 
 
 class Image2TimeSeries:
@@ -34,6 +42,18 @@ class Image2TimeSeries:
 
         # INSERT YOUR CODE
 
+        # 1. Перевод в оттенки серого
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        
+        # 2. Инверсия (чтобы объект был белым на чёрном фоне)
+        gray = cv2.bitwise_not(gray)
+        
+        # 3. Небольшое размытие для устранения шума
+        blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+        
+        # 4. Бинаризация (пороговая обработка)
+        _, prep_img = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    
         return prep_img
 
 
@@ -197,3 +217,21 @@ class Image2TimeSeries:
             ts.append(dist)
 
         return np.array(ts)
+
+
+def image2ts(img: np.ndarray, angle_step: int = 10, is_visualize: bool = False) -> np.ndarray:
+    """
+    Convert image to time series by angle-based method
+    
+    Parameters
+    ----------
+    img: input image
+    angle_step: angle step for finding the contour points
+    is_visualize: visualize or not image with contours, center and rays from starting center
+    
+    Returns
+    -------
+    ts: time series representation
+    """
+    converter = Image2TimeSeries(angle_step=angle_step)
+    return converter.convert(img, is_visualize=is_visualize)
