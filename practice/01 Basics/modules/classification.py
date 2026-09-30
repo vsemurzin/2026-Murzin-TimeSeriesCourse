@@ -67,7 +67,20 @@ class TimeSeriesKNN:
 
         # INSERT YOUR CODE
 
-        return dist
+        params = self.metric_params
+        normalize = params.get('normalize', False)
+
+        if self.metric == 'euclidean':
+            if normalize:
+                return norm_ED_distance(x_train, x_test)
+            else:
+                return ED_distance(x_train, x_test)
+
+        elif self.metric == 'dtw':
+            if normalize:
+                return DTW_distance(z_normalize(x_train), z_normalize(x_test))
+            else:
+                return DTW_distance(x_train, x_test)
 
 
     def _find_neighbors(self, x_test: np.ndarray) -> list[tuple[float, int]]:
@@ -86,6 +99,19 @@ class TimeSeriesKNN:
         neighbors = []
 
         # INSERT YOUR CODE
+
+        neighbors = []
+
+        # 1. Считаем расстояния до всех train-объектов
+        for i in range(len(self.X_train)):
+            dist = self._distance(self.X_train[i], x_test)
+            neighbors.append((dist, int(self.Y_train[i])))
+
+        # 2. Сортируем по расстоянию
+        neighbors.sort(key=lambda pair: pair[0])
+
+        # 3. Берём k ближайших
+        neighbors = neighbors[:self.n_neighbors]
 
         return neighbors
 
@@ -106,6 +132,19 @@ class TimeSeriesKNN:
         y_pred = []
 
         # INSERT YOUR CODE
+
+        for x_test in X_test:
+            neighbors = self._find_neighbors(x_test)
+
+            # Достаём метки соседей
+            labels = [label for _, label in neighbors]
+
+            # Находим наиболее часто встречающуюся метку
+            # np.unique с return_counts=True даёт уникальные значения и их частоты
+            unique, counts = np.unique(labels, return_counts=True)
+            most_common = unique[np.argmax(counts)]
+
+            y_pred.append(most_common)
 
         return np.array(y_pred)
 
