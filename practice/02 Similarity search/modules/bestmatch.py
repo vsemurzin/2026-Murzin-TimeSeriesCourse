@@ -150,11 +150,34 @@ class NaiveBestMatchFinder(BestMatchFinder):
         bsf = np.inf
 
         bestmatch = {
-            'index' : [],
-            'distance' : []
+            'indices' : [],
+            'distances' : []
         }
         
         # INSERT YOUR CODE
+
+        # нормализация запроса
+        if self.is_normalize:
+            query = z_normalize(query)
+
+        # проходим по всем подпоследовательностям
+        for i in range(N):
+            subs = ts_data[i]
+
+            # нормализация подпоследовательности
+            if self.is_normalize:
+                subs = z_normalize(subs)
+
+            # DTW расстояние
+            dist = DTW_distance(query, subs, self.r)
+            dist_profile[i] = dist
+
+        # topK совпадений с учетом зоны исключения
+        match_results = topK_match(dist_profile, excl_zone, self.topK)
+
+        # результат в нужном формате
+        bestmatch['indices'] = match_results['indices']
+        bestmatch['distances'] = match_results['distances']
 
         return bestmatch
 
